@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Navegación Interactiva del Plano</title>
+  
+  <!-- CSS de Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body, html { width: 100%; height: 100%; font-family: Arial, sans-serif; }
+    #map { width: 100%; height: 100vh; background-color: #f0f0f0; }
+    
+    .panel-control {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      z-index: 1000;
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    select, button {
+      padding: 8px 12px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      font-size: 14px;
+    }
+    button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    button:hover { background-color: #0056b3; }
+  </style>
+</head>
+<body>
+
+  <div class="panel-control">
+    <label><b>¿Dónde estás?</b></label>
+    <select id="origen">
+      <option value="porton1">Portón 1</option>
+      <option value="direccion">Dirección</option>
+      <option value="jardin2">Jardín 2</option>
+      <option value="computo">Centro de Cómputo</option>
+    </select>
+
+    <label><b>¿A dónde quieres ir?</b></label>
+    <select id="destino">
+      <option value="direccion">Dirección</option>
+      <option value="porton1">Portón 1</option>
+      <option value="jardin2">Jardín 2</option>
+      <option value="computo">Centro de Cómputo</option>
+    </select>
+
+    <button onclick="trazarRuta()">Calcular Ruta</button>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- JS de Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    // 1. Configurar el mapa en modo de coordenadas simples (píxeles/unidades)
+    const map = L.map('map', {
+      crs: L.CRS.Simple,
+      minZoom: -1
+    });
+
+    // Dimensiones relativas de la imagen del plano (Ancho x Alto)
+    const bounds = [[0, 0], [600, 1000]]; 
+    const image = L.imageOverlay('plano.png', bounds).addTo(map);
+
+    map.fitBounds(bounds);
+
+    // 2. Definir coordenadas (Y, X) dentro de la imagen para cada área
+    const nodos = {
+      porton1:   [250, 100],
+      jardin2:   [350, 100],
+      computo:   [380, 280],
+      direccion: [380, 400],
+      pasillo1:  [250, 280],
+      pasillo2:  [250, 400]
+    };
+
+    // Marcadores visuales de ejemplo
+    L.marker(nodos.porton1).addTo(map).bindPopup("Portón 1");
+    L.marker(nodos.direccion).addTo(map).bindPopup("Dirección");
+
+    let lineaRuta = null;
+
+    // 3. Función para trazar el camino entre dos puntos
+    function trazarRuta() {
+      const inicio = document.getElementById('origen').value;
+      const fin = document.getElementById('destino').value;
+
+      if (inicio === fin) {
+        alert("Ya estás en ese lugar.");
+        return;
+      }
+
+      // Eliminar ruta anterior si existe
+      if (lineaRuta) {
+        map.removeLayer(lineaRuta);
+      }
+
+      // Ejemplo de camino simulado pasando por pasillos (camino de puntos)
+      let camino = [];
+
+      if ((inicio === 'porton1' && fin === 'direccion') || (inicio === 'direccion' && fin === 'porton1')) {
+        camino = [nodos.porton1, nodos.pasillo1, nodos.pasillo2, nodos.direccion];
+      } else {
+        camino = [nodos[inicio], nodos[fin]];
+      }
+
+      // Dibuja la línea de la ruta sobre el plano
+      lineaRuta = L.polyline(camino, {
+        color: '#ff0000',
+        weight: 5,
+        opacity: 0.8,
+        dashArray: '10, 10'
+      }).addTo(map);
+
+      map.fitBounds(lineaRuta.getBounds(), { padding: [50, 50] });
+    }
+
+    // Tip de desarrollo: Haz clic en el mapa para obtener coordenadas (Y, X) exactas de tu imagen
+    map.on('click', function(e) {
+      console.log(`Coordenada cliqueada: [${Math.round(e.latlng.lat)}, ${Math.round(e.latlng.lng)}]`);
+    });
+  </script>
+</body>
+</html>
